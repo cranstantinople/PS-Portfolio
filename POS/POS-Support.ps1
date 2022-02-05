@@ -1,5 +1,4 @@
-﻿
-Function POS-Support {
+﻿Function POS-Support {
         
         #STRUCTURE HASHTABLE
         $POS = @{}

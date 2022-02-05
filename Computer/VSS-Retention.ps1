@@ -1,5 +1,18 @@
 ﻿Function VSS-Retention {
-
+<#
+.Synopsis
+    Cleans up Volume Shadow Storage Snapshots based on Retention Policy.
+.DESCRIPTION
+.EXAMPLE
+.INPUTS
+.OUTPUTS
+.NOTES
+    Author     : Clayton Tschirhart
+    Requires   : 
+.COMPONENT
+.ROLE
+.FUNCTIONALITY
+#> 
     param (
         $Volumes,
         $Log

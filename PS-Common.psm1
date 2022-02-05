@@ -1,5 +1,32 @@
+<#
+.Synopsis
+   Common shared functions for other modules
+.DESCRIPTION
+.EXAMPLE
+.INPUTS
+.OUTPUTS
+.NOTES
+    Author     : Clayton Tschirhart
+    Requires   : 
+.COMPONENT
+.ROLE
+.FUNCTIONALITY
+#>
 Function Pre-Check {
-    
+<#
+.Synopsis
+   Pre Checks Functions for Required Modules/Features/Scripts
+.DESCRIPTION
+.EXAMPLE
+.INPUTS
+.OUTPUTS
+.NOTES
+    Author     : Clayton Tschirhart
+    Requires   : 
+.COMPONENT
+.ROLE
+.FUNCTIONALITY
+#>    
     param (
         $PreCheckInput,
         $Locations,
@@ -162,7 +189,20 @@ Function Pre-Check {
     }
 }
 Function Menu-Select {
-
+<#
+.Synopsis
+   Takes in input to display menu options and returns selection
+.DESCRIPTION
+.EXAMPLE
+.INPUTS
+.OUTPUTS
+.NOTES
+    Author     : Clayton Tschirhart
+    Requires   : 
+.COMPONENT
+.ROLE
+.FUNCTIONALITY
+#>
     param (
     [parameter(Mandatory=$true)]
     $MenuInput,
@@ -226,7 +266,20 @@ Function Menu-Select {
     
 }
 Function App-Flow {
-
+<#
+.Synopsis
+   Creates Application Flow and Returns Values
+.DESCRIPTION
+.EXAMPLE
+.INPUTS
+.OUTPUTS
+.NOTES
+    Author     : Clayton Tschirhart
+    Requires   : 
+.COMPONENT
+.ROLE
+.FUNCTIONALITY
+#> 
     param (
     [parameter(Mandatory=$true)]
     $AppInput,
@@ -290,7 +343,20 @@ Function App-Flow {
     
 }
 Function Convert-HashObject {
-
+<#
+.Synopsis
+    Converts Object to Hashtable or Hastable to Object
+.DESCRIPTION
+.EXAMPLE
+.INPUTS
+.OUTPUTS
+.NOTES
+    Author     : Clayton Tschirhart
+    Requires   : 
+.COMPONENT
+.ROLE
+.FUNCTIONALITY
+#> 
     param (
         [parameter(Mandatory=$true)]
         $ConvertInput,
@@ -325,7 +391,7 @@ Function Convert-HashObject {
     If (-not $Convert.Properties.Return.Name) {
         $Convert.Properties.Return = Convert-Dsv $Convert.Properties.Return
     }
-
+    #Convert Objects
     $Convert.Result = @()
     ForEach ($Object in $Convert.Input.Input) {
             $NewObject = New-Object PSCustomObject
@@ -344,7 +410,20 @@ Function Convert-HashObject {
     Return $Convert.Result    
 }
 Function Report-Export {
-
+<#
+.Synopsis
+    Provides export options for various types of input.
+.DESCRIPTION
+.EXAMPLE
+.INPUTS
+.OUTPUTS
+.NOTES
+    Author     : Clayton Tschirhart
+    Requires   : 
+.COMPONENT
+.ROLE
+.FUNCTIONALITY
+#> 
     param (
         [parameter(Mandatory=$true)]
         $ReportInput,
@@ -379,7 +458,20 @@ Function Report-Export {
     Report-Export $ReportInput $Export
 }
 Function Out-Multi {
-          
+<#
+.Synopsis
+   Allows for multiple outputs with various options from a single input similar to "Tee-Object"
+.DESCRIPTION
+.EXAMPLE
+.INPUTS
+.OUTPUTS
+.NOTES
+    Author     : Clayton Tschirhart
+    Requires   : 
+.COMPONENT
+.ROLE
+.FUNCTIONALITY
+#>           
     param (
         [Parameter(ValueFromPipeline=$true)]
         $Message,
@@ -424,6 +516,20 @@ Function Out-Multi {
     }
 }
 Function Convert-Dsv {
+<#
+.Synopsis
+    Outputs tables from delaminated input with options for sub-delamination
+.DESCRIPTION
+.EXAMPLE
+.INPUTS
+.OUTPUTS
+.NOTES
+    Author     : Clayton Tschirhart
+    Requires   : 
+.COMPONENT
+.ROLE
+.FUNCTIONALITY
+#> 
     param (
         [parameter(Mandatory=$true)]
         $DataInput,
@@ -497,8 +603,21 @@ Function Convert-Dsv {
     }
     
 }
-Function Get-TableData {
-
+Function Get-DsvData {
+<#
+.Synopsis
+    Workflow to get Delmanated data from
+.DESCRIPTION
+.EXAMPLE
+.INPUTS
+.OUTPUTS
+.NOTES
+    Author     : Clayton Tschirhart
+    Requires   : 
+.COMPONENT
+.ROLE
+.FUNCTIONALITY
+#>  
     param (
         [parameter(Mandatory=$true)]
         $DataInput,
@@ -510,113 +629,113 @@ Function Get-TableData {
         )
 
     #Hash Structure and Defaults
-    $TableData = @{}
-    $TableData.Input = @{}
-    $TableData.Import = @{}
-    $TableData.Import.File = @{}
+    $DsvData = @{}
+    $DsvData.Input = @{}
+    $DsvData.Import = @{}
+    $DsvData.Import.File = @{}
 
-    $TableData.Input.Delimiter = "|;"
+    $DsvData.Input.Delimiter = "|;"
 
-    $TableData.Import.File.Path = "C:\TEMP"
-    $TableData.Import.File.Name = "Table-Import"
-    $TableData.Import.File.Extension = "csv"
-    $TableData.Import.Delimiter = ","
+    $DsvData.Import.File.Path = "C:\TEMP"
+    $DsvData.Import.File.Name = "Dsv-Import"
+    $DsvData.Import.File.Extension = "csv"
+    $DsvData.Import.Delimiter = ","
     
     #Change Delimiter if Specified
     If ($Delimiter) {
-        $TableData.Input.Delimiter = $Delimiter
+        $DsvData.Input.Delimiter = $Delimiter
     }
 
     #Get Default Import Path
-    $TableData.Import.File = Define-FullPath $Path -Defaults $TableData.Import.File
+    $DsvData.Import.File = Define-FullPath $Path -Defaults $DsvData.Import.File
 
     Function Import-Data {
-        Write-Host "Checking for $($TableData.Import.File.FullPath)" -ForegroundColor Yellow
+        Write-Host "Checking for $($DsvData.Import.File.FullPath)" -ForegroundColor Yellow
         
-        $TableData.Import.File.Exists = Test-Path $TableData.Import.File.FullPath
+        $DsvData.Import.File.Exists = Test-Path $DsvData.Import.File.FullPath
         
         #Test if File Exists
-        $TableData.Import.File.Pass = $null
-        If ($TableData.Import.File.Exists -eq $True) {
-            Write-Host "$($TableData.Import.File.FullPath) Exists" -ForegroundColor Green
-            $TableData.Import.Table = Get-Content $TableData.Import.File.FullPath
-            $TableData.Import.Table = Convert-Dsv $TableData.Import.Table -Details
+        $DsvData.Import.File.Pass = $null
+        If ($DsvData.Import.File.Exists -eq $True) {
+            Write-Host "$($DsvData.Import.File.FullPath) Exists" -ForegroundColor Green
+            $DsvData.Import.Table = Get-Content $DsvData.Import.File.FullPath
+            $DsvData.Import.Table = Convert-Dsv $DsvData.Import.Table -Details
             #Test if Headers Match
-            If (Compare-Object $TableData.Input.Table.Headers.Name $TableData.Import.Table.Headers.Name) {
-                Write-Host "$($TableData.Import.File.FullPath) Headers Do Not Match" -ForegroundColor Red
-                $TableData.Import.File.Pass = $False
+            If (Compare-Object $DsvData.Input.Table.Headers.Name $DsvData.Import.Table.Headers.Name) {
+                Write-Host "$($DsvData.Import.File.FullPath) Headers Do Not Match" -ForegroundColor Red
+                $DsvData.Import.File.Pass = $False
             }
             #Test if Contains Data
-            If ($TableData.Import.Table.Result.All.Count -eq 0) {
-                Write-Host "$($TableData.Import.File.FullPath) Does Not Contain Any Data" -ForegroundColor Red
-                Write-Host "Please Enter Data in $($TableData.Import.File.FullPath) and Press any Key to Continue" -ForegroundColor Yellow
+            If ($DsvData.Import.Table.Result.All.Count -eq 0) {
+                Write-Host "$($DsvData.Import.File.FullPath) Does Not Contain Any Data" -ForegroundColor Red
+                Write-Host "Please Enter Data in $($DsvData.Import.File.FullPath) and Press any Key to Continue" -ForegroundColor Yellow
                 Read-Host
-                $TableData.Import.File.Pass = $False
+                $DsvData.Import.File.Pass = $False
                 Import-Data
             }
         } Else {
-            Write-Host "$($TableData.Import.File.FullPath) Does Not Exist" -ForegroundColor Red
-            $TableData.Import.File.Pass = $False
+            Write-Host "$($DsvData.Import.File.FullPath) Does Not Exist" -ForegroundColor Red
+            $DsvData.Import.File.Pass = $False
         }
 
-        If ($TableData.Import.File.Pass -eq $False -or $Update) {
+        If ($DsvData.Import.File.Pass -eq $False -or $Update) {
             Write-Host "Would you like to [E]xport File to Enter Data or [U]pdate Path to an Existing File" -ForegroundColor Green
             Switch -Wildcard (Read-Host "[E]xport / [U]pdate") {
                 E* {
-                    Write-Host "Exporting $($TableData.Import.File.FullPath)" -ForegroundColor Yellow
-                    "" | Select-Object $TableData.Input.Table.Headers.Name | Export-Csv -Path $TableData.Import.File.FullPath -NoTypeInformation
+                    Write-Host "Exporting $($DsvData.Import.File.FullPath)" -ForegroundColor Yellow
+                    "" | Select-Object $DsvData.Input.Table.Headers.Name | Export-Csv -Path $DsvData.Import.File.FullPath -NoTypeInformation
                 }
                 U* {
-                    $TableData.Import.File = Define-FullPath $Path $TableData.Import.File -Update
+                    $DsvData.Import.File = Define-FullPath $Path $DsvData.Import.File -Update
                 }
             }
             Import-Data
         }
         Write-Host "Importing Data..." -ForegroundColor Green
-        $TableData.Result = $TableData.Import.Table.Result.All
-        $TableData.Result | Out-Host
+        $DsvData.Result = $DsvData.Import.Table.Result.All
+        $DsvData.Result | Out-Host
     }
     Function Enter-Data {
-        $TableData.Result = @()
+        $DsvData.Result = @()
         do {
             $NewObject = New-Object PSCustomObject
-            ForEach ($Header in $TableData.Input.Table.Headers) {
+            ForEach ($Header in $DsvData.Input.Table.Headers) {
                 $NewObject | Add-Member -MemberType NoteProperty -Name $Header -Value $null
                 $NewObject.$Header = Read-Host "$($Header)"
             }
-            $TableData.Result += $NewObject
-            $TableData.Result | Format-Table
+            $DsvData.Result += $NewObject
+            $DsvData.Result | Format-Table
             Write-Host 'Press Enter to Add Another or [F] to Finish' -ForegroundColor Green
             $Action = Read-Host
         } until ($Action -match "F.*")
     }
 
     #Resolve Input Data
-    $TableData.Input.Table = Convert-Dsv $DataInput -Delimiter $TableData.Input.Delimiter -Details
+    $DsvData.Input.Table = Convert-Dsv $DataInput -Delimiter $DsvData.Input.Delimiter -Details
     
     #If Input Full Table Return
-    If ($TableData.Input.Table.Result.All) {
-        $TableData.Result = $TableData.Input.Table.Result
+    If ($DsvData.Input.Table.Result.All) {
+        $DsvData.Result = $DsvData.Input.Table.Result
     }
 
     #Get Data If No Result or Update Switch is Selected
-    If (-not $TableData.Result -or $Update) {
-        $TableData.Result | Format-Table
+    If (-not $DsvData.Result -or $Update) {
+        $DsvData.Result | Format-Table
         Write-Host "Would you like to [I]mport from File or [E]nter Data" -ForegroundColor Green
         Switch -Wildcard (Read-Host "[I]mport / [E]nter") {
             Default {
                 Import-Data
             }
             E* {
-                If ($TableData.Result) {
-                    $TableData.Result
+                If ($DsvData.Result) {
+                    $DsvData.Result
                     Write-Host "Data Already Exists" -ForegroundColor Yellow
                     Write-Host "Would you like to [A]dd to Existing Data or [C]lear and Enter New" -ForegroundColor Green
                     Switch -Wildcard (Read-Host "[A]dd / [C]lear") {
                         Default {
                         }
                         C* {
-                            $TableData.Result = $null
+                            $DsvData.Result = $null
                         }
                     }
                 }
@@ -625,12 +744,25 @@ Function Get-TableData {
         }
     }
 
-    Return $TableData.Result 
+    Return $DsvData.Result 
     
     #| Sort-Object | Get-Unique | Select-Object | Where-Object {$_ -notlike $null}
 }
 Function Define-FullPath {
-
+<#
+.Synopsis
+    Validates and returns full path from input.
+.DESCRIPTION
+.EXAMPLE
+.INPUTS
+.OUTPUTS
+.NOTES
+    Author     : Clayton Tschirhart
+    Requires   : 
+.COMPONENT
+.ROLE
+.FUNCTIONALITY
+#> 
     param (
         $PathInput,
         $Defaults,
@@ -687,6 +819,20 @@ Function Define-FullPath {
     Return $FullPath.Output
 }
 Function Format-FileSize() {
+<#
+.Synopsis
+    Formats file size input with various options.
+.DESCRIPTION
+.EXAMPLE
+.INPUTS
+.OUTPUTS
+.NOTES
+    Author     : Clayton Tschirhart
+    Requires   : 
+.COMPONENT
+.ROLE
+.FUNCTIONALITY
+#> 
     Param ([int64]$size)
     If     ($size -gt 1TB) {[string]::Format("{0:0.00} TB", $size / 1TB)}
     ElseIf ($size -gt 1GB) {[string]::Format("{0:0.00} GB", $size / 1GB)}

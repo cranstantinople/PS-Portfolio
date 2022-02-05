@@ -20,7 +20,7 @@ Function Robo-Copy {
         $Copy.Items.Table = $Items
     }
     
-    $Copy.Items.Data = Get-TableData $Copy.Items.Table $Copy.Items.Source
+    $Copy.Items.Data = Get-DsvData $Copy.Items.Table $Copy.Items.Source
 
     ForEach ($CopyItem in $Copy.Items.Data.All) {
         $CopyItem | Add-Member -MemberType NoteProperty -Name IsRoot -Value $null -Force
