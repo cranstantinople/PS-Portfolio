@@ -52,7 +52,6 @@ Function Robo-Copy {
     $Copy.Items.Data.All | Select-Object Source,Destination,CopySec,ExcludeDirectories,ExcludeFiles | Format-Table
 
     Select-Options -Timeout 10 -Continue "C" -Default Continue
-    Write-Host "Continuing" -ForegroundColor Green
 
     #Initiate
     ForEach ($CopyItem in $Copy.Items.Data.All) {

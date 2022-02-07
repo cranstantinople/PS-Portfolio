@@ -265,6 +265,7 @@ Function Select-Options {
         }
     }
     Function Select-FromOptions {
+        Add-Type -AssemblyName System.Windows.Forms
         If ($Select.Menu) {
             #Display Menu 
             Write-Host $Select.Menu.Prompt -ForegroundColor Green
@@ -294,7 +295,7 @@ Function Select-Options {
             If (!$Host.UI.RawUI.KeyAvailable -and $Select.Default) {
                 #Continue if Default
                 If ($Select.Default -eq "Continue") {
-                    Write-Host "Continuing" -ForegroundColor Green
+                    Write-Host "Continuing as Default" -ForegroundColor Green
                     Return
                 } Else {
                     $Select.Selection = $Select.Default
@@ -303,7 +304,7 @@ Function Select-Options {
         }
         
         #Read Selection
-        $Select.Selection = $Host.UI.RawUI.ReadKey().Character
+        $Select.Selection = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown").Character
         #Exit
         If (($Select.Selection -eq $Select.Cancel) -or ($Select.Cancel -eq "AnyKey" -and $Select.Selection -ne $Select.Continue)) {
             Write-Host "Exiting" -ForegroundColor Red
