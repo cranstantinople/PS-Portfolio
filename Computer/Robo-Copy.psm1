@@ -1,10 +1,23 @@
 Function Robo-Copy {
-       
+<#
+.Synopsis
+    Uses robocopy to keep multiple locations in sync.
+.DESCRIPTION
+.EXAMPLE
+.INPUTS
+.OUTPUTS
+.NOTES
+    Author     : Clayton Tschirhart
+    Requires   : 
+.COMPONENT
+.ROLE
+.FUNCTIONALITY
+#>         
     param (
         $Items,
         $Log
     )
-
+    #Set Defaults for RoboCopy
     $Copy = @{}
     $Copy.Items = @{}
     $Copy.Items.Table = @(
@@ -19,7 +32,7 @@ Function Robo-Copy {
     If ($Items) {
         $Copy.Items.Table = $Items
     }
-    
+    #Import or enter items for sync.
     $Copy.Items.Data = Get-DsvData $Copy.Items.Table $Copy.Items.Source
 
     ForEach ($CopyItem in $Copy.Items.Data.All) {
@@ -33,7 +46,16 @@ Function Robo-Copy {
         $CopyItem.ExcludeItems = Get-ChildItem $CopyItem.Source -Recurse -Force | Where-Object {$_.Name -in $CopyItem.Exclusions}
         $CopyItem.ExcludeDirectories = $CopyItem.ExcludeItems | Where-Object {$_.PSIsContainer -eq $True} #| ForEach-Object {' "'+$($_.FullName)+'"'}) -Join " "
         $CopyItem.ExcludeFiles = $CopyItem.ExcludeItems | Where-Object {$_.PSIsContainer -eq $False} #| ForEach-Object {'"'+$($_.FullName)+'"'})
+    }
+    #Confirm
+    Write-Host "Items to Sync" -ForegroundColor Yellow
+    $Copy.Items.Data.All | Select-Object Source,Destination,CopySec,ExcludeDirectories,ExcludeFiles | Format-Table
 
+    Select-Options -Timeout 10 -Continue "C" -Default Continue
+    Write-Host "Continuing" -ForegroundColor Green
+
+    #Initiate
+    ForEach ($CopyItem in $Copy.Items.Data.All) {
         $CopyItem.Command = 'robocopy """$($CopyItem.Source) """ """$($CopyItem.Destination) """ /mir /zb /XD $CopyItem.ExcludeDirectories /XF $($CopyItem.ExcludeFiles)'
 
         #Copy Security
@@ -49,5 +71,4 @@ Function Robo-Copy {
         Invoke-Expression $CopyItem.Command
 
     }
-
 }

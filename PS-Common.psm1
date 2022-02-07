@@ -188,7 +188,7 @@ Function Pre-Check {
         Return $PreCheck
     }
 }
-Function Menu-Select {
+Function Select-Options {
 <#
 .Synopsis
    Takes in input to display menu options and returns selection
@@ -204,66 +204,137 @@ Function Menu-Select {
 .FUNCTIONALITY
 #>
     param (
-    [parameter(Mandatory=$true)]
-    $MenuInput,
-    $Prompt,
-    $Property
+        $Menu,
+        $Prompt,
+        $Property,
+        $Timeout,
+        [ArgumentCompleter({@('AnyKey',[char[]](65..90))})]
+        $Continue,
+        [ArgumentCompleter({@('AnyKey',[char[]](65..90))})]
+        $Cancel,
+        [ArgumentCompleter({@('Continue',[char[]](65..90))})]
+        $Default
     )
     
-    If ($MenuInput.Options.Values) {
-            $Menu = $MenuInput
-    } Else {
-            $Menu = @{}
-            $Menu.Prompt = $Prompt
-            $Menu.Options = [Ordered] @{}
-            $o = 1
-            ForEach ($Option in $MenuInput) {
-                    $Menu.Options.Add("o$($o)", @{})
-                    If ($Property) {
-                            $Menu.Options."o$($o)".Name = $Option.$Property
-                            $Menu.Options."o$($o)".Return = $Option
-                    } Else {
-                            $Menu.Options."o$($o)".Name = $Option
-                            $Menu.Options."o$($o)".Return = $Option
-                    }
-                    $o += 1
-            }
-    }
-    #DEFINE OPTIONS
-    $o = 1
-    ForEach ($Option in $Menu.Options.Values) {
-            $Option.Option = $o
-            $o += 1
-    } 
-
-    Function Select-MenuOption {
-        #DISPLAY MENU   
-        Write-Host $Menu.Prompt -ForegroundColor Green
-        ForEach ($Option in $Menu.Options.Values) {
-                Write-Host "    [$($Option.Option)] $($Option.Name)"
-        }
-        Write-Host "    [X] to Exit" -ForegroundColor Yellow
-        Write-Host "Please Make a Selection:" -ForegroundColor Green
-        $Menu.Selection = Read-Host 
-        $Menu.Selection = $Menu.Selection -split ","
-        If ($Menu.Selection -eq "x") {
-                Exit
-        }
-        If ((Compare-Object $Menu.Selection $Menu.Options.Values.Option).SideIndicator -notcontains "<=") {
-                $Menu.Selection = $Menu.Options.Values | Where-Object {$_.Option -in $Menu.Selection}
-        } Else {
-                Write-Host "Invalid Selection. Please Make a Valid Selection" -ForegroundColor Red
-                Select-MenuOption
-        }
-    }
-    Select-MenuOption
-    #RETURN SELECTION
-    If ($Menu.Selection.Return) {
-            return $Menu.Selection.Return
-    } Else {
-            return $Menu.Selection
-    }
+    #Set defaults
+    $Select = @{}
+    $Select.Continue = "C"
+    $Select.Cancel = "AnyKey"
+    $Select.Default = $Select.Cancel
     
+    #Set parameters
+    If ($Timeout) {
+        $Select.Timeout = $Timeout
+    }
+    If ($Continue) {
+        $Select.Continue = $Continue
+        $Select.Cancel = "AnyKey"
+    }
+    If ($Cancel) {
+        $Select.Cancel = $Cancel
+    }
+    If ($Default) {
+        $Select.Default = $Default
+    }
+    If ($Menu) {
+        $Select.Cancel = "X"
+        If ($Menu.Options.Values) {
+                $Select.Menu = $Menu
+        } Else {
+                $Select.Menu = @{}
+                $Select.Menu.Prompt = $Prompt
+                $Select.Menu.Options = [Ordered] @{}
+                $o = 1
+                ForEach ($Option in $Menu) {
+                        $Select.Menu.Options.Add("o$($o)", @{})
+                        If ($Property) {
+                                $Select.Menu.Options."o$($o)".Name = $Option.$Property
+                                $Select.Menu.Options."o$($o)".Return = $Option
+                        } Else {
+                                $Select.Menu.Options."o$($o)".Name = $Option
+                                $Select.Menu.Options."o$($o)".Return = $Option
+                        }
+                        $o += 1
+                }
+        }
+        #Definie Options
+        $o = 1
+        ForEach ($Option in $Select.Menu.Options.Values) {
+                $Option.Option = $o
+                $o += 1
+        }
+    }
+    Function Select-FromOptions {
+        If ($Select.Menu) {
+            #Display Menu 
+            Write-Host $Select.Menu.Prompt -ForegroundColor Green
+            ForEach ($Option in $Select.Menu.Options.Values) {
+                    Write-Host "    [$($Option.Option)] $($Option.Name)"
+            }
+            Write-Host "Please Make a Selection:" -ForegroundColor Green
+        } Else {
+            #Display Option to Continue
+            Write-Host "[$($Select.Continue)] to Continue" -ForegroundColor Green
+        }
+        Write-Host "[$($Select.Cancel)] to Cancel" -ForegroundColor Yellow
+        #Display countdown until input or timeout
+        If ($Select.Timeout) {
+            $Select.Timer = New-Object system.diagnostics.stopwatch
+            $Select.Timer | Add-Member -MemberType NoteProperty -Name TimeRemaining -Value $null -Force
+            $Select.Timer | Add-Member -MemberType NoteProperty -Name PercentRemaining -Value $null -Force
+            $Select.Timer.Start()
+            $Select.Timer.TimeRemaining = $Select.Timeout - $Select.Timer.Elapsed.Seconds
+            while ((!$Host.UI.RawUI.KeyAvailable) -and ($Select.Timer.TimeRemaining -gt 0)) {
+                $Select.Timer.TimeRemaining = $Select.Timeout - $Select.Timer.Elapsed.Seconds
+                $Select.Timer.PercentRemaining = 100-100*($Select.Timer.Elapsed.TotalMilliseconds/($Select.Timeout*1000))
+                Write-Progress -Activity "Waiting for Input" -SecondsRemaining ($Select.Timer.TimeRemaining) -PercentComplete ($Select.Timer.PercentRemaining)
+                Start-Sleep -Milliseconds 100
+            }
+            #Process defaults if timeout
+            If (!$Host.UI.RawUI.KeyAvailable -and $Select.Default) {
+                #Continue if Default
+                If ($Select.Default -eq "Continue") {
+                    Write-Host "Continuing" -ForegroundColor Green
+                    Return
+                } Else {
+                    $Select.Selection = $Select.Default
+                }
+            }
+        }
+        
+        #Read Selection
+        $Select.Selection = $Host.UI.RawUI.ReadKey().Character
+        #Exit
+        If (($Select.Selection -eq $Select.Cancel) -or ($Select.Cancel -eq "AnyKey" -and $Select.Selection -ne $Select.Continue)) {
+            Write-Host "Exiting" -ForegroundColor Red
+            Exit
+        }
+        #Continue
+        If (($Select.Selection -eq $Select.Continue) -or ($Select.Continue -eq "AnyKey")) {
+            Write-Host "Continuing" -ForegroundColor Green
+            Return
+        }
+        #Read Selection
+        [System.Windows.Forms.SendKeys]::SendWait($Select.Selection)
+        $Select.Selection = Read-Host
+        $Select.Selection = $Select.Selection -split ","
+        #Verify Selection
+        If ($Select.Menu) {
+            If ((Compare-Object $Select.Selection $Select.Menu.Options.Values.Option).SideIndicator -notcontains "<=") {
+                    $Select.Selection = $Select.Menu.Options.Values | Where-Object {$_.Option -in $Select.Selection}
+            } Else {
+                Write-Host "Invalid Selection. Please Make a Valid Selection" -ForegroundColor Red
+                Select-FromOptions
+            }
+        } 
+    }
+    Select-FromOptions
+    #Return Selection
+    If ($Select.Selection.Return) {
+            return $Select.Selection.Return
+    } Else {
+            return $Select.Selection
+    }  
 }
 Function App-Flow {
 <#
@@ -306,6 +377,7 @@ Function App-Flow {
                     $o += 1
             }
     }
+    
     #DEFINE OPTIONS
     $o = 1
     ForEach ($Option in $Menu.Options.Values) {
