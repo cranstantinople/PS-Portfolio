@@ -1,15 +1,30 @@
-﻿#REPORTS HASH TABLE
-$Computer.Reports = @{}
-$Computer.Reports.Export = @{}
-$Computer.Reports.Export.Csv = "C:\TEMP\Computer-Report.csv"
-$Computer.Reports.FileTree = @{}
-$Computer.Reports.Service = @{}
+﻿Function Initialize-ComputerReports {
+    #REPORTS HASH TABLE
+    $Computer = @{}
+    $Computer.Reports = @{}
+    $Computer.Reports.Export = @{}
+    $Computer.Reports.Export.Csv = "C:\TEMP\Computer-Report.csv"
+    $Computer.Reports.FileTree = @{}
+    $Computer.Reports.Service = @{}
+}
 
 
-Function FileTree-Report {
-    $Computer.Reports.Export.Csv = "C:\TEMP\FileTree-Report.csv"
-    $Computer.Reports.FileTree.Objects = @{}
+Function Get-FileTree {
+
+    param (
+        $Path,
+        $DirectoryDepth,
+        [switch]$Files,
+        [switch]$HiddenSystem,
+        [switch]$Size
+    )
+
+    $Computer.Reports.FileTree.Path = Get-Location
     $Computer.Reports.FileTree.DirectoryDepth = "1"
+    $Computer.Reports.Export.Csv = "C:\TEMP\FileTree-Report.csv"
+
+
+    $Computer.Reports.FileTree.Objects = @{}
     $Computer.Reports.FileTree.SortOrder = "DomainGroup", "DomainUser", "Local", "Other"
     $Computer.Reports.FileTree.GroupsOverride = "Authenticated Users"
     $Computer.Reports.FileTree.UsersOverride = ""
@@ -25,10 +40,10 @@ Function FileTree-Report {
         'Unit'
     )
 
-    #TEMPORARILY SET GLOBAL ERROR ACTION
+    #Temporarily set global error action preference
     $ErrorActionPreference = "SilentlyContinue"
 
-    #GET COMPUTER ENVIRONMENT INFORMATION
+    #Get local computer environment
     If ($Computer.SystemInfo.PartOfDomain -eq $True) {
         Import-Module ActiveDirectory
         $Computer.Domain.Users = Get-ADUser -Filter *
@@ -42,7 +57,7 @@ Function FileTree-Report {
     }
 
     #VARIABLE PROMPTS
-    $Computer.Reports.FileTree.Path = Get-Location
+
     Write-Host "Current Directory Path to Scan: $($Computer.Reports.FileTree.Path)"
     Write-Host "New Path [Blank for Default]" -ForegroundColor Green
     If ($_ = Read-Host) {
@@ -54,7 +69,7 @@ Function FileTree-Report {
         $Computer.Reports.FileTree.DirectoryDepth = $_
     }
 
-    #BUILD COMMAND FOR CHILD OBJECTS
+    #Build command for child objects
     $Computer.Reports.FileTree.Command = {
         Get-ChildItem -Path $Computer.Reports.FileTree.Path -Recurse -Depth $Computer.Reports.FileTree.DirectoryDepth -ErrorAction SilentlyContinue
     }
@@ -152,7 +167,7 @@ Function FileTree-Report {
             
             #GET ITEM SIZE
             $Item.Unit = "kb" 
-            $Item.Size = ($Item | Get-ChildItem | Measure-Object -Sum Length).Sum / "1$($Item.Unit)"
+            $Item.Size = [math]::round((($Item | Get-ChildItem | Measure-Object -Sum Length).Sum / "1$($Item.Unit)"),2)
 
             #GET ITEM PERMISSIONS
             $Item.DirectoryPath = $Item.Parent.FullName
@@ -191,10 +206,19 @@ Function FileTree-Report {
     }
 
     $ErrorActionPreference = "Continue"
+}
+
+Function Get-FileTree-Report {
+    
+    If (-not $Computer.Reports) {
+        Initialize-ComputerReports
+    }
+
+    Get-FileTree 
 
     #EXPORT REPORT
     $Computer.Reports.Export.Report = $Computer.Reports.FileTree.Objects.All | Select-Object $Computer.Reports.FileTree.Properties.All
-    Report-Export $Computer.Reports.Export.Report $Computer.Reports.Export.Csv
+    Export-Report $Computer.Reports.Export.Report $Computer.Reports.Export.Csv
 }
 Function Service-Report {
 

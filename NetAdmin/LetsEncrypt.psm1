@@ -1,88 +1,61 @@
-﻿Function LE-Init {
+﻿Function Initialize-LetsEncrypt  {
     
     $PreCheck = @{}
     $PreCheck.Required = @(
         'Posh-ACME',
         'Posh-ACME.Deploy'
     )
-    Pre-Check $PreCheck
+    Start-PreCheck $PreCheck
     
     $LE = @{}
+    $LE.Account = Get-PAAccount
     $LE.Certificate = @{}
     $LE.Certificates = @{}
+    $LE.Certificates.Renew = 30
 
     Return $LE
 
 }
-Function LE-New {
+Function New-LECertificate {
 
     Set-PAServer $LE.Server
     New-PAAccount -Contact $LE.Contact -AcceptTOS
     Set-PAAccount -Contact $LE.Contact -AcceptTOS
 
-    New-PACertificate $LE.DNSName -Plugin Cloudflare -PluginArgs $LE.DNSAuth
+    New-PACertificate $LE.Certificate.DNSName -Plugin Cloudflare -PluginArgs $LE.DNSAuth
+    Install-PACertificate $LE.Certificate.DNSName
 
-    Set-PAOrder $LE.DNSName -Plugin Cloudflare -PluginArgs $LE.DNSAuth
+    Set-PAOrder $LE.Certificate.DNSName -Plugin Cloudflare -PluginArgs $LE.DNSAuth
 }
-
 Function Get-LECertificates {
-    
-    Write-Host "Getting Existing Certificates" -ForegroundColor Green
 
     $LE.Date = Get-Date
-    $LE.Certificates.PA = @{}
-    $LE.Certificates.Store = @{}
+    $LE.Certificates.All = Get-PACertificate
+    $LE.Orders = Get-PAOrder
 
-    $LE.Certificates.PA.current = Get-PACertificate
-    $LE.Certificates.RenewDate = Get-Date $LE.Certificates.PA.current.NotAfter.AddDays(-30) -Day 1
-    
-    If ($LE.Date -ge $LE.Certificates.RenewDate) {
-        $LE.Certificates.Renew = $true
-    } Else {
-        $LE.Certificates.Renew = $false
-        $LE.Certificates.PA.new = $LE.Certificates.PA.current
-        $LE.Certificates.Store.new = $LE.Certificates.PA.current
+    ForEach ($Certificate in $LE.Certificates.All) {
+        $Certificate | Add-Member -MemberType NoteProperty -Name Name -Value $null
+        $Certificate | Add-Member -MemberType NoteProperty -Name Order -Value $null
+        $Certificate | Add-Member -MemberType NoteProperty -Name Expires -Value $null
+        $Certificate | Add-Member -MemberType NoteProperty -Name Store -Value $null
+
+        $Certificate.Name = $LE.Subject -replace "CN=",""
+        $Certificate.Order = $LE.Orders | Where-Object {$_.Name -in $Certificate.AllSANs}
+        $Certificate.Expires = $Certificate.NotBefore
+
+        Write-Host "Getting $($Certificate.Name)" -ForegroundColor Green
+        $Certificate.Store = Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object {$_.Thumbprint -match $Certificate.Thumbprint}
+        Write-Host "$($Certificate | Select-Object Name,Thumbprint,Expires)" -ForegroundColor Yellow
     }
-
     return $LE.Certificates
-
 }
-Function LE-Renew {
+Function Update-LECertificate {
     Write-Host "Renewing Certificates" -ForegroundColor Green
-    Submit-Renewal $LE.DNSName
+    Submit-Renewal $LE.Certificate.DNSName
+    $LE.Certificate.new = Get-PACertificate
 
     Write-Host "Installing Certificates" -ForegroundColor Green
-    Install-PACertificate $LE.DNSName
+    Install-PACertificate $LE.Certificate.new
 
-    $LE.Certificates.PA.new = Get-PACertificate
-    $LE.Certificates.Store.New = Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object {$_.Thumbprint -match $($LE.Certificates.PA.new).Thumbprint}
-}
-Function LE-Verify {
-
-    Write-Host "Verifying Certificates..." -ForegroundColor Green
-    $LE.Certificates.IIS.new = Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object {$_.Thumbprint -match $($LE.Certificates.IIS.bindings).CertficateHash}
-    $LE.Certificates.RRAS.new = (Get-RemoteAccess).SslCertificate | Select-Object Subject,NotAfter,Thumbprint
-    $LE.Certificates.RDS.new = Get-RDCertificate | Select-Object Role,Subject,ExpiresOn,Thumbprint
-    $LE.Certificates.RDS.new += Get-RDWebClientBrokerCert | Select-Object Role,Subject,NotAfter,Thumbprint
-
-    Write-Host "Previous Certificates" -ForegroundColor Yellow
-    
-    Write-Host "Let's Encrypt" -ForegroundColor DarkYellow
-    $LE.Certificates.PA.current | Format-Table
-    Write-Host "Certificate Store" -ForegroundColor DarkYellow
-    $LE.Certificates.Store.current | Format-Table
-    Write-Host "IIS" -ForegroundColor DarkYellow
-    $LE.Certificates.IIS.current | Format-Table
-    Write-Host "Routing and Remote Access" -ForegroundColor DarkYellow
-    $LE.Certificates.RRAS.current | Format-Table
-    Write-Host "Remote Desktop Services" -ForegroundColor DarkYellow
-    $LE.Certificates.RDS.current | Format-Table
-    
-    Write-Host "New Certificates" -ForegroundColor Green
-    $LE.Certificates.PA.new | Format-Table
-    $LE.Certificates.Store.new | Format-Table
-    $LE.Certificates.IIS.new | Format-Table
-    $LE.Certificates.RRAS.new | Format-Table
-    $LE.Certificates.RDS.new | Format-Table
-
+    $LE.Certificate.Store.New = Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object {$_.Thumbprint -match $($LE.Certificates.new).Thumbprint}
 }

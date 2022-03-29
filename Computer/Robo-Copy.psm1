@@ -25,7 +25,7 @@ Function Robo-Copy {
     )
     $Copy.Log =@{}
     $Copy.Log.Name = "Robo-Copy-$(Get-Date -Format "yyyy-mm-dd--HH:mm").log"
-    $Copy.Log = Define-FullPath $Copy.Log.Name
+    $Copy.Log = Get-FullPath $Copy.Log.Name
 
     $Copy.Items.Source = "Copy-Items.csv"
 

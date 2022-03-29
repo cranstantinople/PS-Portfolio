@@ -1,43 +1,44 @@
-﻿#FUNCTIONS HASH TABLE
-$O365.Exchange.Addresses.Import = @{}
-$O365.Exchange.Addresses.Import.Csv = "C:\TEMP\O365AddressImport.csv"
-$O365.Exchange.Addresses.Import.All = ""
-$O365.Exchange.Addresses.Import.Report = "C:\TEMP\O365AddressImportReport.csv"
-$O365.Exchange.Addresses = @{}
-$O365.Exchange.Addresses.Types.Contacts.CsvMap = "Contact"
-$O365.Exchange.Addresses.Types.Contacts.New = @{}
-$O365.Exchange.Addresses.Types.Contacts.New.Command = { Contact-New }
-$O365.Exchange.Addresses.Types.Contacts.Existing = @{}
-$O365.Exchange.Addresses.Types.Contacts.Existing.Command = { Contact-Update }
-$O365.Exchange.Addresses.Types.UserMBs.New = @{}
-$O365.Exchange.Addresses.Types.UserMBs.New.Command = { UserMB-New }
-$O365.Exchange.Addresses.Types.UserMBs.Existing = @{}
-$O365.Exchange.Addresses.Types.UserMBs.Existing.Command = { UserMB-Update }
-$O365.Exchange.Addresses.Types.SharedMBs.New = @{}
-$O365.Exchange.Addresses.Types.SharedMBs.New.Command = { SharedMB-New }
-$O365.Exchange.Addresses.Types.SharedMBs.Existing = @{}
-$O365.Exchange.Addresses.Types.SharedMBs.Existing.Command = { SharedMB-Update }
-$O365.Exchange.Addresses.Types.DistGroups.New = @{}
-$O365.Exchange.Addresses.Types.DistGroups.New.Command = { DistGroup-New }
-$O365.Exchange.Addresses.Types.DistGroups.Existing = @{}
-$O365.Exchange.Addresses.Types.DistGroups.Existing.Command = { DistGroup-Update }
-$O365.Exchange.Addresses.Types.O365Groups.New = @{}
-$O365.Exchange.Addresses.Types.O365Groups.New.Command ={ O365Group-New }
-$O365.Exchange.Addresses.Types.O365Groups.Existing = @{}
-$O365.Exchange.Addresses.Types.O365Groups.Existing.Command = { O365Group-Update }
-$O365.Exchange.Addresses.Types.O365Teams.New = @{}
-$O365.Exchange.Addresses.Types.O365Teams.New.Command = "O365Team-New"
-$O365.Exchange.Addresses.Types.O365Teams.Existing = @{}
-$O365.Exchange.Addresses.Types.O365Teams.Existing.Command = { O365Team-Update }
-$O365.Exchange.Addresses.Types.MailSecurity.New = @{}
-$O365.Exchange.Addresses.Types.MailSecurity.New.Command = ""
-$O365.Exchange.Addresses.Types.MailSecurity.Existing = @{}
-$O365.Exchange.Addresses.Types.MailSecurity.Existing.Command = ""
-$O365.Exchange.Addresses.Delete.Command = { Address-Remove }
-$O365.Exchange.Addresses.Delete.New = @{}
-$O365.Exchange.Addresses.Delete.Existing = @{}
-$O365.Exchange.Addresses.Export = @{}
-$O365.Exchange.Addresses.Export.Csv = "C:\TEMP\AddressReport.csv"
+﻿Function O365-Functions-Init {
+    #FUNCTIONS HASH TABLE
+    $O365.Exchange.Addresses.Import = @{}
+    $O365.Exchange.Addresses.Import.Csv = "C:\TEMP\O365AddressImport.csv"
+    $O365.Exchange.Addresses.Import.All = ""
+    $O365.Exchange.Addresses.Import.Report = "C:\TEMP\O365AddressImportReport.csv"
+    $O365.Exchange.Addresses.Types.Contacts.CsvMap = "Contact"
+    $O365.Exchange.Addresses.Types.Contacts.New = @{}
+    $O365.Exchange.Addresses.Types.Contacts.New.Command = { Contact-New }
+    $O365.Exchange.Addresses.Types.Contacts.Existing = @{}
+    $O365.Exchange.Addresses.Types.Contacts.Existing.Command = { Contact-Update }
+    $O365.Exchange.Addresses.Types.UserMBs.New = @{}
+    $O365.Exchange.Addresses.Types.UserMBs.New.Command = { UserMB-New }
+    $O365.Exchange.Addresses.Types.UserMBs.Existing = @{}
+    $O365.Exchange.Addresses.Types.UserMBs.Existing.Command = { UserMB-Update }
+    $O365.Exchange.Addresses.Types.SharedMBs.New = @{}
+    $O365.Exchange.Addresses.Types.SharedMBs.New.Command = { SharedMB-New }
+    $O365.Exchange.Addresses.Types.SharedMBs.Existing = @{}
+    $O365.Exchange.Addresses.Types.SharedMBs.Existing.Command = { SharedMB-Update }
+    $O365.Exchange.Addresses.Types.DistGroups.New = @{}
+    $O365.Exchange.Addresses.Types.DistGroups.New.Command = { DistGroup-New }
+    $O365.Exchange.Addresses.Types.DistGroups.Existing = @{}
+    $O365.Exchange.Addresses.Types.DistGroups.Existing.Command = { DistGroup-Update }
+    $O365.Exchange.Addresses.Types.O365Groups.New = @{}
+    $O365.Exchange.Addresses.Types.O365Groups.New.Command ={ O365Group-New }
+    $O365.Exchange.Addresses.Types.O365Groups.Existing = @{}
+    $O365.Exchange.Addresses.Types.O365Groups.Existing.Command = { O365Group-Update }
+    $O365.Exchange.Addresses.Types.O365Teams.New = @{}
+    $O365.Exchange.Addresses.Types.O365Teams.New.Command = "O365Team-New"
+    $O365.Exchange.Addresses.Types.O365Teams.Existing = @{}
+    $O365.Exchange.Addresses.Types.O365Teams.Existing.Command = { O365Team-Update }
+    $O365.Exchange.Addresses.Types.MailSecurity.New = @{}
+    $O365.Exchange.Addresses.Types.MailSecurity.New.Command = ""
+    $O365.Exchange.Addresses.Types.MailSecurity.Existing = @{}
+    $O365.Exchange.Addresses.Types.MailSecurity.Existing.Command = ""
+    $O365.Exchange.Addresses.Delete.Command = { Address-Remove }
+    $O365.Exchange.Addresses.Delete.New = @{}
+    $O365.Exchange.Addresses.Delete.Existing = @{}
+    $O365.Exchange.Addresses.Export = @{}
+    $O365.Exchange.Addresses.Export.Csv = "C:\TEMP\AddressReport.csv"
+}
 
 #SUPPORT FUNCTIONS
 Function CsvMappings-Get {
@@ -301,29 +302,21 @@ Function O365-SPO-MoveURL {
 
     Install-Module PnP.Powershell
 
-    $OldURL = "https://sammysinc.sharepoint.com/sites/Sammys/Lists/Squirrel Issue Tracking/"
-    $NewUrl = "https://sammysinc.sharepoint.com/sites/Sammys/Squirrel/Lists/Issue Tracking/"
-
-
     #Set Parameters
-$SiteURL = "https://sammysinc.sharepoint.com/sites/Habys/Squirrel"
-$ListName = "Issue Tracking"
-$NewSiteURL = "https://sammysinc.sharepoint.com/sites/Habys/Squirrel"
-$NewListName = "IssueTracking"
-  
-#Connect to PNP Online
-Connect-PnPOnline -Url $SiteURL -UseWebLogin
- 
-#Get the List
-$List = Get-PnPList -Identity $ListName -Includes RootFolder
- 
-#sharepoint online powershell change list url
-$List.Rootfolder.MoveTo($NewListName)
-Invoke-PnPQuery
-
-
-#Read more: https://www.sharepointdiary.com/2017/09/sharepoint-online-change-list-document-library-url-using-powershell.html#ixzz79OWohEHU
-
+    $SiteURL = "https://sammysinc.sharepoint.com/sites/Habys/Squirrel"
+    $ListName = "Issue Tracking"
+    $NewSiteURL = "https://sammysinc.sharepoint.com/sites/Habys/Squirrel"
+    $NewListName = "IssueTracking"
+    
+    #Connect to PNP Online
+    Connect-PnPOnline -Url $SiteURL -UseWebLogin
+    
+    #Get the List
+    $List = Get-PnPList -Identity $ListName -Includes RootFolder
+    
+    #sharepoint online powershell change list url
+    $List.Rootfolder.MoveTo($NewListName)
+    Invoke-PnPQuery
     ForEach ($User in $Users) {
         If ($User.BlockCredential -eq $False) {
             Write-Host $User.UserPrincipalName
@@ -331,5 +324,3 @@ Invoke-PnPQuery
         }
     }
 }
-
-

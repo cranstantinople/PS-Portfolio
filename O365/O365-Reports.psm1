@@ -1,88 +1,89 @@
-﻿#REPORTS HASH TABLE
-$O365.Reports = @{}
-$O365.Reports.Export = @{}
-$O365.Reports.Export.Csv = "C:\TEMP\O365-Report.csv"
-$O365.Exchange.Addresses.Types.Contacts.Report = @{}
-$O365.Exchange.Addresses.Types.Contacts.Report.Command = {
-    
-}
-$O365.Exchange.Addresses.Types.UserMBs.Report = @{}
-$O365.Exchange.Addresses.Types.UserMBs.Report.Command = {
-    $Address.MSOnline = $O365.MSOnline.Users | Where-Object {$Address.ExternalDirectoryObjectId -eq $_.ObjectId}
-    $Address.Exchange = Get-EXOMailboxStatistics $Address.ExternalDirectoryObjectId
-    $Address.Type = $O365.Exchange.Addresses.Types.UserMBs.CsvMap
-    $Address.TotalItemSize = $Address.Exchange.TotalItemSize
-    $Address.ItemCount = $Address.Exchange.ItemCount
-    $Address.LastLogonTime = $Address.MSOnline.LastLogonTime
-    $Address.LastPasswordChangeTimeStamp = $Address.MSOnline.LastPasswordChangeTimeStamp
-    $Address.MFA = ($Address.MSOnline.StrongAuthenticationRequirements.State)+"."+($Address.MSOnline.StrongAuthenticationMethods.MethodType -Join ",")
-    $Address.LoginDisabled = $Address.MSOnline.BlockCredential
-    $Address.ImmutableID = $Address.MSOnline.ImmutableID
-    
-    ForEach ($License in $O365.MSOnline.Licenses.Current){
-        If ($Address.MSOnline.LicenseAssignmentDetails.AccountSku.SkuPartNumber -eq $License.SkuPartNumber) {
-            $Address.($License.Name) = $True
+﻿Function O365-Report-Init {
+    #REPORTS HASH TABLE
+    $O365.Reports = @{}
+    $O365.Reports.Export = @{}
+    $O365.Reports.Export.Csv = "C:\TEMP\O365-Report.csv"
+    $O365.Exchange.Addresses.Types.Contacts.Report = @{}
+    $O365.Exchange.Addresses.Types.Contacts.Report.Command = {
+        
+    }
+    $O365.Exchange.Addresses.Types.UserMBs.Report = @{}
+    $O365.Exchange.Addresses.Types.UserMBs.Report.Command = {
+        $Address.MSOnline = $O365.MSOnline.Users | Where-Object {$Address.ExternalDirectoryObjectId -eq $_.ObjectId}
+        $Address.Exchange = Get-EXOMailboxStatistics $Address.ExternalDirectoryObjectId
+        $Address.Type = $O365.Exchange.Addresses.Types.UserMBs.CsvMap
+        $Address.TotalItemSize = $Address.Exchange.TotalItemSize
+        $Address.ItemCount = $Address.Exchange.ItemCount
+        $Address.LastLogonTime = $Address.MSOnline.LastLogonTime
+        $Address.LastPasswordChangeTimeStamp = $Address.MSOnline.LastPasswordChangeTimeStamp
+        $Address.MFA = ($Address.MSOnline.StrongAuthenticationRequirements.State)+"."+($Address.MSOnline.StrongAuthenticationMethods.MethodType -Join ",")
+        $Address.LoginDisabled = $Address.MSOnline.BlockCredential
+        $Address.ImmutableID = $Address.MSOnline.ImmutableID
+        
+        ForEach ($License in $O365.MSOnline.Licenses.Current){
+            If ($Address.MSOnline.LicenseAssignmentDetails.AccountSku.SkuPartNumber -eq $License.SkuPartNumber) {
+                $Address.($License.Name) = $True
+            }
         }
     }
-}
-$O365.Exchange.Addresses.Types.SharedMBs.Report = @{}
-$O365.Exchange.Addresses.Types.SharedMBs.Report.Command = {
-    $Address.Exchange = Get-EXOMailboxStatistics $Address.ExternalDirectoryObjectId
-    $Address.Type = $O365.Exchange.Addresses.Types.SharedMBs.CsvMap
-    $Address.TotalItemSize = $Address.Exchange.TotalItemSize
-    $Address.ItemCount = $Address.Exchange.ItemCount
-    $Address.Owners = (Get-MailboxPermission $Address.PrimarySmtpAddress | Where-Object {$_.AccessRights -match "FullAccess" -and $_.User -match "@"}).User -join ","
-    $Address.SendAs = (Get-RecipientPermission $Address.PrimarySmtpAddress | Where-Object {$_.AccessRights -match "SendAs" -and $_.Trustee -match "@"}).Trustee -join ","
-}
-$O365.Exchange.Addresses.Types.DistGroups.Report = @{}
-$O365.Exchange.Addresses.Types.DistGroups.Report.Command = {
-    $Address.Exchange = $O365.Exchange.Groups | Where-Object {$Address.ExternalDirectoryObjectId -eq $_.ExternalDirectoryObjectId}
-    $Address.Type = $O365.Exchange.Addresses.Types.DistGroups.CsvMap
-    $Address.Owners = $Address.Exchange.ManagedBy -join ","
-    $Address.Members = (Get-DistributionGroupMember $Address.PrimarySmtpAddress).PrimarySmtpAddress -join ","
-    $Address.InternalOnly = $Address.Exchange.RequireSenderAuthenticationEnabled
-    $Address.AcceptFrom = $Address.Exchange.AcceptMessagesOnlyFrom -join ","
-    $Address.GALHide = $Address.Exchange.FromHiddenFromAddressListsEnabled
-}
-$O365.Exchange.Addresses.Types.O365Groups.Report = @{}
-$O365.Exchange.Addresses.Types.O365Groups.Report.Command = {
-    $Address.Exchange = $O365.Exchange.Groups | Where-Object {$Address.ExternalDirectoryObjectId -eq $_.ExternalDirectoryObjectId}
-    If ($Address.Exchange.ResourceProvisioningOptions -match "Team") {
-        $Address.Type = $O365.Exchange.Addresses.Types.O365Teams.O365Map
-    } Else {
-        $Address.Type = $O365.Exchange.Addresses.Types.O365Groups.CsvMap
+    $O365.Exchange.Addresses.Types.SharedMBs.Report = @{}
+    $O365.Exchange.Addresses.Types.SharedMBs.Report.Command = {
+        $Address.Exchange = Get-EXOMailboxStatistics $Address.ExternalDirectoryObjectId
+        $Address.Type = $O365.Exchange.Addresses.Types.SharedMBs.CsvMap
+        $Address.TotalItemSize = $Address.Exchange.TotalItemSize
+        $Address.ItemCount = $Address.Exchange.ItemCount
+        $Address.Owners = (Get-MailboxPermission $Address.PrimarySmtpAddress | Where-Object {$_.AccessRights -match "FullAccess" -and $_.User -match "@"}).User -join ","
+        $Address.SendAs = (Get-RecipientPermission $Address.PrimarySmtpAddress | Where-Object {$_.AccessRights -match "SendAs" -and $_.Trustee -match "@"}).Trustee -join ","
     }
-    $Address.Owners = (Get-UnifiedGroupLinks $Address.PrimarySmtpAddress -LinkType Owners) -join ","
-    $Address.Members = (Get-UnifiedGroupLinks $Address.PrimarySmtpAddress -LinkType Members).PrimarySmtpAddress -join ","
-    $Address.AcceptFrom = $Address.Exchange.AcceptMessagesOnlyFrom -join ","
-    $Address.InternalOnly = $Address.Exchange.RequireSenderAuthenticationEnabled.ToString()
+    $O365.Exchange.Addresses.Types.DistGroups.Report = @{}
+    $O365.Exchange.Addresses.Types.DistGroups.Report.Command = {
+        $Address.Exchange = $O365.Exchange.Groups | Where-Object {$Address.ExternalDirectoryObjectId -eq $_.ExternalDirectoryObjectId}
+        $Address.Type = $O365.Exchange.Addresses.Types.DistGroups.CsvMap
+        $Address.Owners = $Address.Exchange.ManagedBy -join ","
+        $Address.Members = (Get-DistributionGroupMember $Address.PrimarySmtpAddress).PrimarySmtpAddress -join ","
+        $Address.InternalOnly = $Address.Exchange.RequireSenderAuthenticationEnabled
+        $Address.AcceptFrom = $Address.Exchange.AcceptMessagesOnlyFrom -join ","
+        $Address.GALHide = $Address.Exchange.FromHiddenFromAddressListsEnabled
+    }
+    $O365.Exchange.Addresses.Types.O365Groups.Report = @{}
+    $O365.Exchange.Addresses.Types.O365Groups.Report.Command = {
+        $Address.Exchange = $O365.Exchange.Groups | Where-Object {$Address.ExternalDirectoryObjectId -eq $_.ExternalDirectoryObjectId}
+        If ($Address.Exchange.ResourceProvisioningOptions -match "Team") {
+            $Address.Type = $O365.Exchange.Addresses.Types.O365Teams.O365Map
+        } Else {
+            $Address.Type = $O365.Exchange.Addresses.Types.O365Groups.CsvMap
+        }
+        $Address.Owners = (Get-UnifiedGroupLinks $Address.PrimarySmtpAddress -LinkType Owners) -join ","
+        $Address.Members = (Get-UnifiedGroupLinks $Address.PrimarySmtpAddress -LinkType Members).PrimarySmtpAddress -join ","
+        $Address.AcceptFrom = $Address.Exchange.AcceptMessagesOnlyFrom -join ","
+        $Address.InternalOnly = $Address.Exchange.RequireSenderAuthenticationEnabled.ToString()
 
+    }
+    $O365.Exchange.Addresses.Types.O365Teams.Report = @{}
+    $O365.Exchange.Addresses.Types.O365Teams.Report.Command = {
+        $Address.Type = $O365.Exchange.Addresses.Types.O365Teams.CsvMap
+    }
+    $O365.Exchange.Addresses.Types.MailSecurity.Report = @{}
+    $O365.Exchange.Addresses.Types.MailSecurity.Report.Command = {
+        $Address.Exchange = $O365.Exchange.Groups | Where-Object {$Address.ExternalDirectoryObjectId -eq $_.ExternalDirectoryObjectId}
+        $Address.Type = $O365.Exchange.Addresses.Types.MailSecurity.CsvMap
+        $Address.Owners = $Address.Exchange.ManagedBy -join ","
+        $Address.Members = (Get-DistributionGroupMember $Address.PrimarySmtpAddress).PrimarySmtpAddress -join ","
+        $Address.InternalOnly = $Address.Exchange.RequireSenderAuthenticationEnabled
+        $Address.AcceptFrom = $Address.Exchange.AcceptMessagesOnlyFrom -join ","
+        $Address.GALHide = $Address.Exchange.FromHiddenFromAddressListsEnabled
+    }
 }
-$O365.Exchange.Addresses.Types.O365Teams.Report = @{}
-$O365.Exchange.Addresses.Types.O365Teams.Report.Command = {
-    $Address.Type = $O365.Exchange.Addresses.Types.O365Teams.CsvMap
-}
-$O365.Exchange.Addresses.Types.MailSecurity.Report = @{}
-$O365.Exchange.Addresses.Types.MailSecurity.Report.Command = {
-    $Address.Exchange = $O365.Exchange.Groups | Where-Object {$Address.ExternalDirectoryObjectId -eq $_.ExternalDirectoryObjectId}
-    $Address.Type = $O365.Exchange.Addresses.Types.MailSecurity.CsvMap
-    $Address.Owners = $Address.Exchange.ManagedBy -join ","
-    $Address.Members = (Get-DistributionGroupMember $Address.PrimarySmtpAddress).PrimarySmtpAddress -join ","
-    $Address.InternalOnly = $Address.Exchange.RequireSenderAuthenticationEnabled
-    $Address.AcceptFrom = $Address.Exchange.AcceptMessagesOnlyFrom -join ","
-    $Address.GALHide = $Address.Exchange.FromHiddenFromAddressListsEnabled
-}
-
 Function O365-AddressReport {
 
     $PreCheck = @{}
     $PreCheck.Required = @(
-            'O365-Common'
+            'O365-Common',
+            '$O365;O365-Init',
+            '$O365.Reports;O365-Report-Init'
     )
     Pre-Check $PreCheck
-
-    O365-Services -MSOnline -Exchange
-
+    
     $O365.Reports.O365 = @{}
     $O365.Reports.O365.Properties = @(
         'Type'
@@ -148,7 +149,7 @@ Function O365-AddressReport {
 
     $O365.Reports.Export.Report = $O365.Exchange.Addresses.Existing.Report | Select-Object $O365.Reports.O365.Properties
     
-    Report-Export $O365.Reports.Export.Report $O365.Reports.Export.Csv
+    Export-Report $O365.Reports.Export.Report $O365.Reports.Export.Csv
 
     O365-AddressReport
 }

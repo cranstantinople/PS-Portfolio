@@ -93,6 +93,33 @@ Function Get-RoleCertificates {
         $Role.Certificate.$Version
     }
 }
+Function Check-ServerCertificates {
+
+    Import-Module "\\SINC\IT\PSRepo\PS-Common.psm1" -DisableNameChecking
+    
+    $PreCheck = @{}
+    $PreCheck.Required = @(
+        'LetsEncrypt',
+        'Server-Common',
+        'Server-Functions'
+    )
+    Start-PreCheck $PreCheck
+    
+    $Server = Initialize-Server
+    $LE = Initialize-LetsEncrypt
+
+    $LE.Certificates = Get-LECertificates
+    $LE.Certificate = $LE.Certificates | Where-Object {$_.Name -eq $LE.Certificate.DNSName}
+
+    If ($LE.Certificate.Renew -eq $true) {
+        Get-RoleCertificates -Version Previous
+        Update-LECertificate
+        Update-RoleCertificates -Certificate $LE.Certificates.Store.New -PfxCert $LE.Certificates.PA.New.PfxFile -PfxPass $LE.Certificates.PA.New.PfxPass
+        Get-RoleCertificates -Version New
+    }
+
+
+}
 Function Update-RoleCertificates {
 
     param (
@@ -116,27 +143,28 @@ Function Update-RoleCertificates {
 
     $Server.Roles.All.RRAS.Certificate.Update.Command = {
         Import-Module RemoteAccess
-        Stop-Service RemoteAccess
-        Set-RemoteAccess -SslCertificate $Certificate
-        Start-Service RemoteAccess
+        Stop-Service RemoteAccess -Verbose
+        Set-RemoteAccess -SslCertificate $Certificate -Verbose
+        Start-Sleep 1
+        Start-Service RemoteAccess -Verbose
     }
     
     $Server.Roles.All.RDS.Certificate.Update.Command = {
-        Set-RDCertificate RDGateway -ImportPath $PfxCert -Password $PfxPass -Force
-        Set-RDCertificate RDWebAccess -ImportPath $PfxCert -Password $PfxPass -Force
-        Set-RDCertificate RDRedirector -ImportPath $PfxCert -Password $PfxPass -Force
-        Set-RDCertificate RDPublishing -ImportPath $PfxCert -Password $PfxPass -Force
+        Set-RDCertificate RDGateway -ImportPath $PfxCert -Password $PfxPass -Force -Verbose
+        Set-RDCertificate RDWebAccess -ImportPath $PfxCert -Password $PfxPass -Force -Verbose
+        Set-RDCertificate RDRedirector -ImportPath $PfxCert -Password $PfxPass -Force -Verbose
+        Set-RDCertificate RDPublishing -ImportPath $PfxCert -Password $PfxPass -Force -Verbose
     }
 
     $Server.Roles.All.RDWeb.Certificate.Update.Command = {
-        Import-RDWebClientBrokerCert -Path $PfxCert -Password $PfxPass
-        Publish-RDWebClientPackage -Type Production -Latest
+        Import-RDWebClientBrokerCert -Path $PfxCert -Password $PfxPass -Verbose
+        Publish-RDWebClientPackage -Type Production -Latest -Verbose
     }
 
     $Server.Roles.All.WAC.Certificate.Update.Command = { 
-        Get-Service ServerManagementGateway | Stop-Service
-        Set-ItemProperty $Server.Roles.All.WAC.Certificate.Previous.PSPath -Name Thumbprint -Value $Certificate.Thumbprint
-        Get-Service ServerManagementGateway | Start-Service
+        Get-Service ServerManagementGateway | Stop-Service -Verbose
+        Set-ItemProperty $Server.Roles.All.WAC.Certificate.Previous.PSPath -Name Thumbprint -Value $Certificate.Thumbprint -Verbose
+        Get-Service ServerManagementGateway | Start-Service -Verbose
     }
 
     $Server.Roles.Update = @{}
@@ -163,7 +191,7 @@ Function Update-RoleCertificates {
 
     }
 }
-Function Server-DHCP {
+Function Get-ServerDHCP {
     
     $Server.Roles.All.DHCP.Scopes = @{}
 
